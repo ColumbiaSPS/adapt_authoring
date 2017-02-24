@@ -32,14 +32,15 @@ function AdaptOutput() {
 util.inherits(AdaptOutput, OutputPlugin);
 
 AdaptOutput.prototype.publish = function(courseId, isPreview, request, response, next) {
-  var app = origin();
   var self = this;
-  var user = usermanager.getCurrentUser(),
-    tenantId = user.tenant._id,
-    outputJson = {},
-    isRebuildRequired = false,
-    themeName = '',
-    menuName = Constants.Defaults.MenuName;
+  var app = origin();
+
+  var user = usermanager.getCurrentUser();
+  var tenantId = user.tenant._id;
+  var outputJson = {};
+  var isRebuildRequired = request.query.force === 'true';
+  var themeName = '';
+  var menuName = Constants.Defaults.MenuName;
 
   var resultObject = {};
 
@@ -99,9 +100,10 @@ AdaptOutput.prototype.publish = function(courseId, isPreview, request, response,
           if (err) {
             return callback(err);
           }
-
-          isRebuildRequired = exists;
-
+          // force option overrides the build flag
+          if(!isRebuildRequired) {
+            isRebuildRequired = exists;
+          }
           callback(null);
         });
       },
