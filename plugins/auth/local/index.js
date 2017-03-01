@@ -104,21 +104,18 @@ LocalAuth.prototype.authenticate = function (req, res, next) {
 
     if (!user) {
       // Check if a valid email was used
-      res.statusCode = 401;
-      return res.json({ success: false, errorCode: info.errorCode});
+      return res.status(401).json({ success: false, errorCode: info.errorCode});
     } else {
       // check user is not deleted
       if (user._isDeleted) {
-        res.statusCode = 401;
-        return res.json({ success: false, errorCode: ERROR_CODES.ACCOUNT_INACTIVE });
+        return res.status(401).json({ success: false, errorCode: ERROR_CODES.ACCOUNT_INACTIVE });
       }
 
       // check tenant is enabled
       self.isTenantEnabled(user, function (err, isEnabled) {
         if (!isEnabled) {
           // don't allow login
-          res.statusCode = 401;
-          return res.json({ success: false, errorCode: ERROR_CODES.TENANT_DISABLED });
+          return res.status(401).json({ success: false, errorCode: ERROR_CODES.TENANT_DISABLED });
         }
 
         // Store the login details
@@ -138,8 +135,7 @@ LocalAuth.prototype.authenticate = function (req, res, next) {
               if (error) {
                 return next(error);
               }
-              res.statusCode = 200;
-  
+
               if (req.body.shouldPersist && req.body.shouldPersist == 'true') {
                 // Session is persisted for 2 weeks if the user has set 'Remember me'
                 req.session.cookie.maxAge = 14 * 24 * 3600000;
@@ -148,7 +144,9 @@ LocalAuth.prototype.authenticate = function (req, res, next) {
               }
 
               var userSession = req.session.passport.user;
-  
+
+              res.statusCode = 200;
+              
               return res.json({
                 success: true,
                 id: user._id,
@@ -170,8 +168,7 @@ LocalAuth.prototype.authenticate = function (req, res, next) {
 
 LocalAuth.prototype.disavow = function (req, res, next) {
   req.logout();
-  res.statusCode = 200;
-  return res.json({ success: true });
+  return res.status(200).json({ success: true });
 };
 
 LocalAuth.prototype.registerUser = function (req, res, next) {
@@ -185,11 +182,7 @@ LocalAuth.prototype.registerUser = function (req, res, next) {
     if (error) {
       return next(error);
     }
-
-
-    res.statusCode = 200;
-    return res.json({ _id:user._id, email: user.email });
-
+    return res.status(200).json({ _id:user._id, email: user.email });
   });
 
 };
@@ -228,13 +221,9 @@ LocalAuth.prototype.resetPassword = function (req, res, next) {
   this.internalResetPassword(user, function (error, user) {
     if (error) {
       logger.log('error', error);
-      res.statusCode = 200;
-      return res.json({success: false});
-      // return next(error);
+      return res.status(200).json({ success: false });
     }
-
-    res.statusCode = 200;
-    return res.json({success: true});
+    return res.status(200).json({ success: true });
   });
  };
 
@@ -273,8 +262,7 @@ LocalAuth.prototype.generateResetToken = function (req, res, next) {
   usermanager.retrieveUser({email: req.body.email, auth: 'local'}, function (error, userRecord) {
     if (error) {
       logger.log('error', error);
-      res.statusCode = 400;
-      return res.json({success: false});
+      return res.status(400).json({ success: false });
     }
       
     if (userRecord) {
@@ -314,10 +302,8 @@ LocalAuth.prototype.generateResetToken = function (req, res, next) {
         });
       });
     } else {
-      // Indicate that all is ok even if the user does not exist
-      // This is to prevent hacking attempts
-      res.statusCode = 200;
-      return res.json({success: true});      
+      // Return 200 even if user doesn't exist to prevent brute force hacking
+      return res.status(200).json({ success: true });
     }
   });
 };
